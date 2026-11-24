@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="color-scheme" content="dark light" />
+  <title>T3 Code · Antigravity Quota Showcase</title>
+  <style>
+    :root {
+      --foreground: #0f172a;
+      --muted-foreground: rgba(15, 23, 42, 0.58);
+      --background: #eef2f9;
+      --sidebar-bg: rgba(255, 255, 255, 0.62);
+      --card-bg: rgba(255, 255, 255, 0.72);
+      --code-bg: rgba(15, 23, 42, 0.045);
+      --composer-bg: rgba(255, 255, 255, 0.88);
+      --border: rgba(15, 23, 42, 0.09);
+      --row-hover: rgba(15, 23, 42, 0.055);
+      --row-active: rgba(37, 99, 235, 0.09);
+      --accent: #2563eb;
+    }
+    html.dark {
+      --foreground: #f3f5fa;
+      --muted-foreground: #9499ad;
+      --background: #0d0f15;
+      --sidebar-bg: rgba(18, 20, 28, 0.85);
+      --card-bg: rgba(255, 255, 255, 0.035);
+      --code-bg: rgba(8, 10, 16, 0.58);
+      --composer-bg: rgba(24, 27, 38, 0.86);
+      --border: rgba(255, 255, 255, 0.075);
+      --row-hover: rgba(255, 255, 255, 0.06);
+      --row-active: rgba(129, 140, 248, 0.13);
+      --accent: #60a5fa;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", system-ui, sans-serif;
+      color: var(--foreground);
+      background:
+        radial-gradient(56% 52% at 38% 22%, rgba(56, 189, 248, 0.14), transparent 65%),
+        radial-gradient(48% 48% at 72% 68%, rgba(168, 85, 247, 0.17), transparent 64%),
+        radial-gradient(42% 40% at 46% 78%, rgba(52, 211, 153, 0.11), transparent 60%),
+        var(--background);
+      display: grid;
+      grid-template-columns: 248px 1fr;
+      height: 100vh;
+      overflow: hidden;
+    }
+    html:not(.dark) body {
+      background:
+        radial-gradient(58% 52% at 38% 20%, rgba(56, 189, 248, 0.24), transparent 64%),
+        radial-gradient(50% 48% at 76% 72%, rgba(168, 85, 247, 0.20), transparent 64%),
+        radial-gradient(40% 40% at 48% 76%, rgba(16, 185, 129, 0.16), transparent 60%),
+        linear-gradient(155deg, #f5f8ff, #e8eefb);
+    }
+
+    /* Realistic T3 Sidebar */
+    .mock-sidebar {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+      background: var(--sidebar-bg);
+      padding: 12px 10px 8px;
+      gap: 10px;
+    }
+    .sb-brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 8px 6px;
+    }
+    .sb-logo {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 5px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .sb-logo span { font-weight: 500; color: var(--muted-foreground); }
+    .sb-new {
+      font-size: 11.5px;
+      color: var(--muted-foreground);
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .sb-group-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted-foreground);
+      padding: 6px 8px 2px;
+      letter-spacing: 0.02em;
+    }
+    .sb-threads {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+    }
+    .sb-thread {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 9px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      color: var(--muted-foreground);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sb-thread.is-active {
+      background: var(--row-active);
+      color: var(--foreground);
+      font-weight: 600;
+    }
+    .sb-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #34d399;
+      flex: 0 0 auto;
+    }
+    .sb-settled {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 8px;
+      font-size: 12px;
+      color: var(--muted-foreground);
+    }
+    .mock-sidebar-footer {
+      display: flex;
+      flex-direction: column;
+      padding: 4px 2px 2px;
+      border-top: 1px solid var(--border);
+    }
+    .mock-sidebar-menu {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 4px;
+      list-style: none;
+      margin: 4px 0 0;
+      padding: 0;
+      width: 100%;
+    }
+    .mock-sidebar-menu > li { list-style: none; margin: 0; padding: 0; }
+    .mock-icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 0;
+      background: transparent;
+      color: var(--muted-foreground);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .mock-icon-btn:hover { background: var(--row-hover); color: var(--foreground); }
+    .mock-update-btn {
+      margin-left: auto;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: rgba(127, 127, 127, 0.18);
+      border: 0;
+      color: var(--foreground);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+
+    /* Realistic Main Stage */
+    .mock-stage {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 18px 28px 18px;
+      min-width: 0;
+    }
+    .stage-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12.5px;
+    }
+    .stage-title { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .stage-branch {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--muted-foreground);
+    }
+    .stage-diff { font-family: ui-monospace, Consolas, monospace; font-size: 11.5px; }
+    .diff-add { color: #10b981; margin-right: 6px; }
+    .diff-del { color: #f43f5e; }
+
+    .stage-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-width: 680px;
+      margin: 18px 0 auto;
+    }
+    .msg-card {
+      padding: 16px 20px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+    }
+    .msg-card h2 {
+      font-size: 15px;
+      margin: 0 0 6px;
+      font-weight: 600;
+    }
+    .msg-card p {
+      margin: 0;
+      font-size: 12.8px;
+      color: var(--muted-foreground);
+      line-height: 1.6;
+    }
+    .code-snippet {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 11px;
+      border: 1px solid var(--border);
+      background: var(--code-bg);
+      font-family: "Cascadia Code", ui-monospace, Consolas, monospace;
+      font-size: 11.8px;
+      line-height: 1.65;
+    }
+    .tok-kw { color: #c084fc; }
+    .tok-fn { color: #38bdf8; }
+    .tok-str { color: #34d399; }
+    .tok-cm { color: var(--muted-foreground); }
+
+    .mock-composer {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px 14px 10px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: var(--composer-bg);
+      box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.25);
+    }
+    .composer-input {
+      font-size: 13px;
+      color: var(--muted-foreground);
+    }
+    .composer-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .composer-pills {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11.5px;
+      color: var(--muted-foreground);
+    }
+    .composer-pill {
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+    }
+    .mock-composer-send {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted-foreground);
+    }
+    .mock-send-circle {
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: #3b82f6;
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+  </style>
+  <link rel="stylesheet" href="/assets/antigravity-quota.css" />
+  <script>
+    (function () {
+      var q = new URLSearchParams(location.search);
+      if (q.get('theme') === 'light') {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+      }
+      window.__T3_AG_QUOTA_PORT__ = Number(q.get('port') || 47899);
+      window.__T3_AG_FIXTURE_PREVIEW__ = true;
+      if (q.get('open') === '1' || q.get('mini') === '1') {
+        var tries = 0;
+        var timer = window.setInterval(function () {
+          tries += 1;
+          if (window.__T3_AG_QUOTA_UI__) {
+            if (q.get('open') === '1') {
+              window.__T3_AG_QUOTA_UI__.open();
+              if (q.get('models') === '1') {
+                window.setTimeout(function () {
+                  var btn = document.getElementById('t3-ag-models-toggle');
+                  if (btn && !btn.hidden) btn.click();
+                }, 350);
+              }
+            } else {
+              window.__T3_AG_QUOTA_UI__.showMini();
+            }
+            window.clearInterval(timer);
+          } else if (tries > 40) {
+            window.clearInterval(timer);
+          }
+        }, 80);
+      }
+    })();
+  </script>
+  <script defer src="/assets/antigravity-quota.js"></script>
+</head>
+<body>
+  <aside class="mock-sidebar" data-slot="sidebar">
+    <div class="sb-brand">
+      <div class="sb-logo">T3 <span>Code</span></div>
+      <div class="sb-new">+ 新建</div>
+    </div>
+    <div class="sb-group-label">t3-antigravity-quota</div>
+    <div class="sb-threads">
+      <div class="sb-thread is-active"><span class="sb-dot"></span>Liquid Glass 液态玻璃重构</div>
+      <div class="sb-thread">内嵌 HTTP 钩子与静默续期</div>
+      <div class="sb-thread">Windows 系统代理动态感知</div>
+      <div class="sb-thread">多模型池与重置时间对齐</div>
+    </div>
+    <div class="sb-settled"><span>已收尾</span><span>3 ›</span></div>
+    <div data-sidebar="footer" data-slot="sidebar-footer" class="mock-sidebar-footer">
+      <ul data-sidebar="menu" data-slot="sidebar-menu" class="mock-sidebar-menu">
+        <li data-sidebar="menu-item" data-slot="sidebar-menu-item" class="shrink-0">
+          <button class="mock-icon-btn" type="button" data-sidebar="menu-button" data-size="icon" data-slot="tooltip-trigger" aria-label="Settings">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M4.93 4.93l2.12 2.12m9.9 9.9 2.12 2.12M2 12h3m14 0h3M4.93 19.07l2.12-2.12m9.9-9.9 2.12-2.12"/></svg>
+          </button>
+        </li>
+        <li data-sidebar="menu-item" data-slot="sidebar-menu-item" class="shrink-0">
+          <button class="mock-icon-btn" type="button" data-sidebar="menu-button" data-size="icon" data-slot="tooltip-trigger" aria-label="Pull requests">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7M6 9v12"/></svg>
+          </button>
+        </li>
+        <li data-sidebar="menu-item" data-slot="sidebar-menu-item" class="shrink-0">
+          <button class="mock-icon-btn" type="button" data-sidebar="menu-button" data-size="icon" data-slot="tooltip-trigger" aria-label="Issues">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
+          </button>
+        </li>
+        <li data-sidebar="menu-item" data-slot="sidebar-menu-item" class="shrink-0">
+          <button class="mock-icon-btn" type="button" data-sidebar="menu-button" data-size="icon" data-slot="tooltip-trigger" aria-label="Usage">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 20V14M12 20V6M18 20V11"/></svg>
+          </button>
+        </li>
+        <button class="mock-update-btn" type="button" aria-label="Updates">↑</button>
+      </ul>
+    </div>
+  </aside>
+
+  <section class="mock-stage">
+    <div class="stage-topbar">
+      <div class="stage-title">
+        <span>Liquid Glass 液态玻璃重构</span>
+        <span class="stage-branch">main</span>
+      </div>
+      <div class="stage-diff"><span class="diff-add">+284</span><span class="diff-del">-39</span></div>
+    </div>
+
+    <div class="stage-feed">
+      <div class="msg-card">
+        <h2>内嵌随行路由与双态液态玻璃面板已就绪</h2>
+        <p>额度监控已直接随 T3 Code 内部 HTTP 服务启动，左下角侧栏图标支持悬停极简预览与点击全量展开，自动感知系统代理并在令牌过期时经 ACP 静默续期。</p>
+        <div class="code-snippet">
+          <div><span class="tok-kw">const</span> summary = <span class="tok-kw">await</span> <span class="tok-fn">fetchQuotaParallel</span>({</div>
+          <div>&nbsp;&nbsp;endpoints: [<span class="tok-str">"retrieveUserQuotaSummary"</span>, <span class="tok-str">"fetchAvailableModels"</span>, <span class="tok-str">"loadCodeAssist"</span>],</div>
+          <div>&nbsp;&nbsp;silentRenewal: <span class="tok-str">"agy.exe acp"</span>, <span class="tok-cm">// 零弹窗自动续期 · 45s 内存缓存</span></div>
+          <div>});</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mock-composer">
+      <div class="composer-input">向 Antigravity 提问，输入 @ 引用文件，或输入 / 调用指令…</div>
+      <div class="composer-bar">
+        <div class="composer-pills">
+          <span class="composer-pill">✦ Gemini 4 Carbon · High</span>
+          <span class="composer-pill">Default</span>
+        </div>
+        <div class="mock-composer-send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4"/></svg>
+          <div class="mock-send-circle">↑</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

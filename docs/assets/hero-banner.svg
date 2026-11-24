@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 380" width="1200" height="380" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="380" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#090B12"/>
+      <stop offset="52%" stop-color="#101526"/>
+      <stop offset="100%" stop-color="#0B0E18"/>
+    </linearGradient>
+    <radialGradient id="orbCyan" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(240 90) rotate(25) scale(420 260)">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.26"/>
+      <stop offset="100%" stop-color="#38BDF8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orbPurple" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(960 290) rotate(-18) scale(460 280)">
+      <stop offset="0%" stop-color="#C084FC" stop-opacity="0.24"/>
+      <stop offset="100%" stop-color="#C084FC" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orbEmerald" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(650 60) scale(300 180)">
+      <stop offset="0%" stop-color="#34D399" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#34D399" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="prism" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="50%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#E879F9"/>
+    </linearGradient>
+    <linearGradient id="glassCard" x1="760" y1="56" x2="1120" y2="324" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.11"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.03"/>
+    </linearGradient>
+    <linearGradient id="glassRim" x1="760" y1="56" x2="1120" y2="324" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.42"/>
+      <stop offset="45%" stop-color="#FFFFFF" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.28"/>
+    </linearGradient>
+    <linearGradient id="barGreen" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#34D399"/>
+    </linearGradient>
+    <linearGradient id="barAmber" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#D97706"/>
+      <stop offset="100%" stop-color="#FBBF24"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="380" rx="28" fill="url(#bg)"/>
+  <rect width="1200" height="380" rx="28" fill="url(#orbCyan)"/>
+  <rect width="1200" height="380" rx="28" fill="url(#orbPurple)"/>
+  <rect width="1200" height="380" rx="28" fill="url(#orbEmerald)"/>
+  <rect x="1" y="1" width="1198" height="378" rx="27" stroke="#FFFFFF" stroke-opacity="0.10" stroke-width="2"/>
+
+  <!-- Left Hero Typography -->
+  <g transform="translate(72, 68)">
+    <!-- Brand Mark Badge -->
+    <rect x="0" y="0" width="54" height="54" rx="16" fill="#FFFFFF" fill-opacity="0.07" stroke="#FFFFFF" stroke-opacity="0.18"/>
+    <path d="M16 40L27 14L38 40" stroke="url(#prism)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M21 31.5C24.6 29.2 29.4 29.2 33 31.5" stroke="url(#prism)" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="42" cy="41" r="4.5" fill="#34D399" stroke="#0C101C" stroke-width="2"/>
+
+    <rect x="70" y="12" width="166" height="30" rx="15" fill="#38BDF8" fill-opacity="0.12" stroke="#38BDF8" stroke-opacity="0.32"/>
+    <text x="153" y="32" text-anchor="middle" fill="#7DD3FC" font-family="Segoe UI, system-ui, sans-serif" font-size="13" font-weight="600" letter-spacing="0.4">FOR T3 CODE (BETA)</text>
+
+    <text x="0" y="114" fill="#F8FAFC" font-family="Segoe UI, -apple-system, sans-serif" font-size="46" font-weight="800" letter-spacing="-1">T3 Antigravity Quota</text>
+    <text x="0" y="156" fill="#94A3B8" font-family="Segoe UI, Microsoft YaHei UI, sans-serif" font-size="20" font-weight="400">原生嵌入侧栏的液态玻璃额度监控 · 悬停极简预览 · 点击全量透视</text>
+
+    <!-- Feature Chips -->
+    <g transform="translate(0, 192)" font-family="Segoe UI, Microsoft YaHei UI, sans-serif" font-size="13" font-weight="600">
+      <rect x="0" y="0" width="144" height="34" rx="10" fill="#FFFFFF" fill-opacity="0.06" stroke="#FFFFFF" stroke-opacity="0.12"/>
+      <text x="72" y="22" text-anchor="middle" fill="#E2E8F0">✦ 光学液态玻璃</text>
+
+      <rect x="156" y="0" width="154" height="34" rx="10" fill="#FFFFFF" fill-opacity="0.06" stroke="#FFFFFF" stroke-opacity="0.12"/>
+      <text x="233" y="22" text-anchor="middle" fill="#E2E8F0">⚡ 内嵌重启不失效</text>
+
+      <rect x="322" y="0" width="154" height="34" rx="10" fill="#FFFFFF" fill-opacity="0.06" stroke="#FFFFFF" stroke-opacity="0.12"/>
+      <text x="399" y="22" text-anchor="middle" fill="#E2E8F0">🔑 静默自动续期</text>
+
+      <rect x="488" y="0" width="132" height="34" rx="10" fill="#FFFFFF" fill-opacity="0.06" stroke="#FFFFFF" stroke-opacity="0.12"/>
+      <text x="554" y="22" text-anchor="middle" fill="#E2E8F0">📦 零外部依赖</text>
+    </g>
+  </g>
+
+  <!-- Right Decorative Liquid Glass Card Preview -->
+  <g transform="translate(768, 52)">
+    <rect x="0" y="0" width="364" height="276" rx="24" fill="url(#glassCard)" stroke="url(#glassRim)" stroke-width="1.5"/>
+    <text x="24" y="38" fill="#F8FAFC" font-family="Segoe UI, sans-serif" font-size="16" font-weight="700">Antigravity</text>
+    <rect x="122" y="21" width="96" height="22" rx="11" fill="#FFFFFF" fill-opacity="0.10" stroke="#FFFFFF" stroke-opacity="0.18"/>
+    <text x="170" y="36" text-anchor="middle" fill="#E2E8F0" font-family="Segoe UI, sans-serif" font-size="11.5" font-weight="600">Google AI Pro</text>
+
+    <line x1="24" y1="56" x2="340" y2="56" stroke="#FFFFFF" stroke-opacity="0.10"/>
+
+    <text x="24" y="80" fill="#94A3B8" font-family="Segoe UI, Microsoft YaHei UI, sans-serif" font-size="11.5">当前最低剩余额度</text>
+    <text x="24" y="122" fill="#34D399" font-family="Segoe UI, sans-serif" font-size="40" font-weight="800">68.4%</text>
+    <rect x="272" y="88" width="68" height="26" rx="13" fill="#34D399" fill-opacity="0.14" stroke="#34D399" stroke-opacity="0.4"/>
+    <text x="306" y="105" text-anchor="middle" fill="#34D399" font-family="Segoe UI, Microsoft YaHei UI, sans-serif" font-size="12" font-weight="700">● 充沛</text>
+
+    <line x1="24" y1="142" x2="340" y2="142" stroke="#FFFFFF" stroke-opacity="0.10"/>
+
+    <!-- Row 1 -->
+    <text x="24" y="168" fill="#E2E8F0" font-family="Segoe UI, Microsoft YaHei UI, sans-serif" font-size="13" font-weight="600">Gemini · 5 小时窗口</text>
+    <text x="340" y="168" text-anchor="end" fill="#34D399" font-family="Segoe UI, sans-serif" font-size="13" font-weight="700">68.4%</text>
+    <rect x="24" y="178" width="316" height="7" rx="3.5" fill="#FFFFFF" fill-opacity="0.10"/>
+    <rect x="24" y="178" width="216" height="7" rx="3.5" fill="url(#barGreen)"/>
+
+    <!-- Row 2 -->
+    <text x="24" y="212" fill="#E2E8F0" font-family="Segoe UI, Microsoft YaHei UI, sans-serif" font-size="13" font-weight="600">Claude &amp; GPT · 5 小时窗口</text>
+    <text x="340" y="212" text-anchor="end" fill="#34D399" font-family="Segoe UI, sans-serif" font-size="13" font-weight="700">100%</text>
+    <rect x="24" y="222" width="316" height="7" rx="3.5" fill="#FFFFFF" fill-opacity="0.10"/>
+    <rect x="24" y="222" width="316" height="7" rx="3.5" fill="url(#barGreen)"/>
+
+    <!-- Row 3 -->
+    <text x="24" y="254" fill="#94A3B8" font-family="Segoe UI, Microsoft YaHei UI, sans-serif" font-size="11.5">实时 · 来自本机 Antigravity 凭证</text>
+    <text x="340" y="254" text-anchor="end" fill="#FBBF24" font-family="Segoe UI, sans-serif" font-size="11.5" font-weight="600">AI Credits ≥ 50</text>
+  </g>
+</svg>
