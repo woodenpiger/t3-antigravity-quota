@@ -4,7 +4,7 @@
   if (window.__T3_AG_QUOTA_LOADED__) return;
   window.__T3_AG_QUOTA_LOADED__ = true;
 
-  var VERSION = '2.1.0';
+  var VERSION = '2.2.0';
   var STORAGE_KEY = 't3-antigravity-quota:v2';
   var MIN_INTERVAL_MS = 5000;
   var FRESH_TTL_MS = 60_000;
@@ -38,7 +38,7 @@
     lastManualForceAt: 0,
     startupAttempt: 0,
     startupTimer: 0,
-    placementRaf: 0,
+    placementTimer: 0,
     observer: null,
     controller: null,
     ticker: 0,
@@ -311,37 +311,20 @@
     svg.setAttribute('focusable', 'false');
     svg.classList.add('t3-ag-fab__mark');
 
-    var defs = document.createElementNS(svgNS, 'defs');
-    var grad = document.createElementNS(svgNS, 'linearGradient');
-    var gid = 't3ag-prism-' + Math.random().toString(36).slice(2, 7);
-    grad.setAttribute('id', gid);
-    grad.setAttribute('x1', '0');
-    grad.setAttribute('y1', '1');
-    grad.setAttribute('x2', '1');
-    grad.setAttribute('y2', '0');
-    [['0%', '#38bdf8'], ['50%', '#818cf8'], ['100%', '#e879f9']].forEach(function (pair) {
-      var stop = document.createElementNS(svgNS, 'stop');
-      stop.setAttribute('offset', pair[0]);
-      stop.setAttribute('stop-color', pair[1]);
-      grad.appendChild(stop);
-    });
-    defs.appendChild(grad);
-    svg.appendChild(defs);
-
     var outer = document.createElementNS(svgNS, 'path');
     outer.setAttribute('d', 'M5.5 19.2L12 3.8l6.5 15.4');
     outer.setAttribute('fill', 'none');
-    outer.setAttribute('stroke', 'url(#' + gid + ')');
-    outer.setAttribute('stroke-width', '2.4');
+    outer.setAttribute('stroke', 'currentColor');
+    outer.setAttribute('stroke-width', '2.1');
     outer.setAttribute('stroke-linecap', 'round');
     outer.setAttribute('stroke-linejoin', 'round');
     svg.appendChild(outer);
 
     var arch = document.createElementNS(svgNS, 'path');
-    arch.setAttribute('d', 'M8.4 14.2c2.2-1.3 5-1.3 7.2 0');
+    arch.setAttribute('d', 'M8.4 14.4c2.2-1.15 5-1.15 7.2 0');
     arch.setAttribute('fill', 'none');
-    arch.setAttribute('stroke', 'url(#' + gid + ')');
-    arch.setAttribute('stroke-width', '2');
+    arch.setAttribute('stroke', 'currentColor');
+    arch.setAttribute('stroke-width', '1.85');
     arch.setAttribute('stroke-linecap', 'round');
     svg.appendChild(arch);
     return svg;
@@ -374,9 +357,124 @@
     return !!(window.CSS && window.CSS.supports && window.CSS.supports('overlay', 'auto') && canTransitionDisplay());
   }
 
+  function buildLiquidLensDataUrl(w, h, radius, bezel) {
+    try {
+      var canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      var img = ctx.createImageData(w, h);
+      var data = img.data;
+      var cx = w * 0.5;
+      var cy = h * 0.5;
+      var hx = cx - radius;
+      var hy = cy - radius;
+
+      for (var y = 0; y < h; y += 1) {
+        var dy = y + 0.5 - cy;
+        var ady = Math.abs(dy);
+        var py = ady - hy;
+        var oy = py > 0 ? py : 0;
+        for (var x = 0; x < w; x += 1) {
+          var dx = x + 0.5 - cx;
+          var adx = Math.abs(dx);
+          var px = adx - hx;
+          var ox = px > 0 ? px : 0;
+
+          var sd = Math.hypot(ox, oy) + Math.min(Math.max(px, py), 0) - radius;
+          var distIn = -sd;
+          var r = 128;
+          var g = 128;
+
+          if (distIn > 0 && distIn < bezel) {
+            var u = distIn / bezel;
+            // Smooth convex squircle bezel slope: strongest optical bend near rim, zero seam at interior
+            var mag = Math.pow(1 - u, 2.0);
+            var nx = 0;
+            var ny = 0;
+            if (px > 0 || py > 0) {
+              var len = Math.hypot(ox, oy) || 1;
+              nx = (dx >= 0 ? 1 : -1) * (ox / len);
+              ny = (dy >= 0 ? 1 : -1) * (oy / len);
+            } else if (px > py) {
+              nx = dx >= 0 ? 1 : -1;
+            } else {
+              ny = dy >= 0 ? 1 : -1;
+            }
+            r = Math.max(0, Math.min(255, Math.round(128 + nx * mag * 126)));
+            g = Math.max(0, Math.min(255, Math.round(128 + ny * mag * 126)));
+          }
+
+          var idx = (y * w + x) * 4;
+          data[idx] = r;
+          data[idx + 1] = g;
+          data[idx + 2] = 128;
+          data[idx + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      return canvas.toDataURL('image/png');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function buildLiquidLensSvg() {
+    var svgNS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('class', 't3-ag-lens-svg');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    var defs = document.createElementNS(svgNS, 'defs');
+    var specs = [
+      { id: 't3ag-lens-panel', w: 188, h: 310, r: 12, bezel: 22, scale: 22 },
+      { id: 't3ag-lens-mini', w: 138, h: 176, r: 10, bezel: 18, scale: 18 },
+    ];
+    var created = 0;
+    specs.forEach(function (spec) {
+      var href = buildLiquidLensDataUrl(spec.w, spec.h, spec.r, spec.bezel);
+      if (!href) return;
+      var filter = document.createElementNS(svgNS, 'filter');
+      filter.setAttribute('id', spec.id);
+      filter.setAttribute('x', '0%');
+      filter.setAttribute('y', '0%');
+      filter.setAttribute('width', '100%');
+      filter.setAttribute('height', '100%');
+      filter.setAttribute('color-interpolation-filters', 'sRGB');
+
+      var feImg = document.createElementNS(svgNS, 'feImage');
+      feImg.setAttribute('href', href);
+      feImg.setAttribute('x', '0');
+      feImg.setAttribute('y', '0');
+      feImg.setAttribute('width', '100%');
+      feImg.setAttribute('height', '100%');
+      feImg.setAttribute('preserveAspectRatio', 'none');
+      feImg.setAttribute('result', 'dispMap');
+
+      var feDisp = document.createElementNS(svgNS, 'feDisplacementMap');
+      feDisp.setAttribute('in', 'SourceGraphic');
+      feDisp.setAttribute('in2', 'dispMap');
+      feDisp.setAttribute('scale', String(spec.scale));
+      feDisp.setAttribute('xChannelSelector', 'R');
+      feDisp.setAttribute('yChannelSelector', 'G');
+
+      filter.appendChild(feImg);
+      filter.appendChild(feDisp);
+      defs.appendChild(filter);
+      created += 1;
+    });
+    if (!created) return null;
+    svg.appendChild(defs);
+    return svg;
+  }
+
   function buildRoot() {
     var root = el('div');
     root.id = 't3-ag-root';
+
+    var lensSvg = buildLiquidLensSvg();
+    if (lensSvg) root.appendChild(lensSvg);
 
     var fab = el('button', 't3-ag-fab');
     fab.type = 'button';
@@ -395,17 +493,14 @@
     var mini = el('aside', 't3-ag-mini');
     mini.id = 't3-ag-mini';
     mini.setAttribute('aria-hidden', 'true');
+    if (lensSvg) mini.setAttribute('data-lens', 'ready');
     if (hasNativePopover()) {
       mini.setAttribute('popover', 'manual');
     }
 
-    var miniNoise = el('div', 't3-ag-noise');
-    miniNoise.setAttribute('aria-hidden', 'true');
-    mini.appendChild(miniNoise);
-
     var miniHead = el('div', 't3-ag-mini__head');
     var miniBrand = el('div', 't3-ag-mini__brand');
-    miniBrand.appendChild(prismMark(14));
+    miniBrand.appendChild(prismMark(13));
     miniBrand.appendChild(el('span', 't3-ag-mini__title', 'Antigravity'));
     miniHead.appendChild(miniBrand);
     var miniTier = el('span', 't3-ag-tier t3-ag-mini__tier');
@@ -418,25 +513,25 @@
     miniList.id = 't3-ag-mini-list';
     mini.appendChild(miniList);
 
-    var miniHint = el('div', 't3-ag-mini__hint', '点击图标查看模型与重置详情');
+    var miniHint = el('div', 't3-ag-mini__hint', '点击图标展开详细模型与额度');
     miniHint.id = 't3-ag-mini-hint';
     mini.appendChild(miniHint);
 
-    var panel = el('section', 't3-ag-panel');
+    // Native <dialog popover="auto"> detail panel (falls back to dialog.showModal() when Popover API is absent)
+    var panel = document.createElement('dialog');
+    panel.className = 't3-ag-panel';
     panel.id = 't3-ag-panel';
-    panel.setAttribute('role', 'dialog');
+    panel.tabIndex = -1;
+    panel.setAttribute('autofocus', '');
     panel.setAttribute('aria-labelledby', 't3-ag-h2');
+    if (lensSvg) panel.setAttribute('data-lens', 'ready');
     if (hasNativePopover()) {
       panel.setAttribute('popover', 'auto');
     }
 
-    var noise = el('div', 't3-ag-noise');
-    noise.setAttribute('aria-hidden', 'true');
-    panel.appendChild(noise);
-
     var head = el('header', 't3-ag-head');
     var brand = el('div', 't3-ag-brand');
-    brand.appendChild(prismMark(16));
+    brand.appendChild(prismMark(15));
     var h2 = el('h2', 't3-ag-h2', 'Antigravity');
     h2.id = 't3-ag-h2';
     brand.appendChild(h2);
@@ -532,6 +627,8 @@
     var foot = el('footer', 't3-ag-foot');
     var status = el('span', 't3-ag-status', '');
     status.id = 't3-ag-status';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
     var retry = el('button', 't3-ag-retry', '重试');
     retry.type = 'button';
     retry.id = 't3-ag-retry';
@@ -660,11 +757,16 @@
     if (!state.modelsExpanded) return;
 
     models.forEach(function (m) {
-      var chip = el('div', 't3-ag-model-chip');
-      chip.setAttribute('data-band', bandOf(m.remainingPct));
-      chip.appendChild(el('span', 't3-ag-model-chip__name', m.name || m.id));
-      chip.appendChild(el('span', 't3-ag-model-chip__pct', pctText(m.remainingPct) + '%'));
-      list.appendChild(chip);
+      var row = el('div', 't3-ag-model-row');
+      row.setAttribute('data-band', bandOf(m.remainingPct));
+      var left = el('span', 't3-ag-model-row__left');
+      var dot = el('span', 't3-ag-model-row__dot');
+      dot.setAttribute('aria-hidden', 'true');
+      left.appendChild(dot);
+      left.appendChild(el('span', 't3-ag-model-row__name', m.name || m.id));
+      row.appendChild(left);
+      row.appendChild(el('span', 't3-ag-model-row__pct', pctText(m.remainingPct) + '%'));
+      list.appendChild(row);
     });
   }
 
@@ -889,6 +991,7 @@
   function startTicker() {
     stopTicker();
     state.ticker = window.setInterval(function () {
+      if (document.hidden) return;
       var nodes = document.querySelectorAll('#t3-ag-root [data-reset-at], #t3-ag-root [data-mini-reset-at]');
       for (var i = 0; i < nodes.length; i += 1) {
         var iso = nodes[i].getAttribute('data-reset-at') || nodes[i].getAttribute('data-mini-reset-at');
@@ -927,6 +1030,10 @@
         panel.removeAttribute('data-closing');
       }
       try { if (panel.matches(':popover-open')) panel.hidePopover(); } catch (e) {}
+    } else if (typeof panel.close === 'function' && panel.open) {
+      panel.removeAttribute('data-ag-open');
+      panel.removeAttribute('aria-modal');
+      try { panel.close(); } catch (e) {}
     } else {
       panel.removeAttribute('data-ag-open');
     }
@@ -956,7 +1063,7 @@
       card.style.right = 'auto';
       card.style.top = 'auto';
       card.style.bottom = Math.max(12, Math.round(vh - rect.bottom)) + 'px';
-      card.style.maxHeight = Math.max(180, Math.min(Math.floor(vh - 24), Math.floor(vh * 0.86), minHeightCap)) + 'px';
+      card.style.maxHeight = Math.max(180, Math.min(Math.floor(vh - 24), minHeightCap)) + 'px';
       return;
     }
 
@@ -980,11 +1087,11 @@
   }
 
   function positionPanel() {
-    positionTopCard(state.panel, 344, 640);
+    positionTopCard(state.panel, 376, 700);
   }
 
   function positionMini() {
-    positionTopCard(state.mini, 248, 360);
+    positionTopCard(state.mini, 276, 390);
   }
 
   function clearHoverTimer() {
@@ -1062,6 +1169,10 @@
         } catch (e) {
           state.panel.setAttribute('data-ag-open', 'true');
         }
+      } else if (typeof state.panel.showModal === 'function') {
+        state.panel.setAttribute('data-ag-open', 'true');
+        state.panel.setAttribute('aria-modal', 'true');
+        try { if (!state.panel.open) state.panel.showModal(); } catch (e) {}
       } else {
         state.panel.setAttribute('data-ag-open', 'true');
       }
@@ -1246,11 +1357,11 @@
   }
 
   function schedulePlacementSync() {
-    if (state.placementRaf) return;
-    state.placementRaf = window.requestAnimationFrame(function () {
-      state.placementRaf = 0;
-      syncTriggerPlacement();
-    });
+    if (document.hidden || state.placementTimer) return;
+    state.placementTimer = window.setTimeout(function () {
+      state.placementTimer = 0;
+      if (!document.hidden) syncTriggerPlacement();
+    }, 16);
   }
 
   function bind() {

@@ -1,6 +1,6 @@
 {
   "name": "t3-antigravity-quota",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Liquid Glass Antigravity quota monitor plugin for T3 Code (Beta) on Windows — zero dependencies, embedded server hook, hover mini preview & click detail view.",
   "private": true,
   "license": "MIT",

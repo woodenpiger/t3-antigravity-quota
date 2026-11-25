@@ -5,7 +5,7 @@
  * Zero fs / network / Electron dependency.
  */
 
-const VERSION = '2.1.0';
+const VERSION = '2.2.0';
 const REFRESH_VIA_T3 = '请在 T3 Code 里重新登录 Antigravity 或发送一次对话以刷新授权';
 
 function round1(n) {

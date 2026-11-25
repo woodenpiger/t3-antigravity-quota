@@ -1,6 +1,6 @@
 ![T3 Antigravity Quota Banner](./docs/assets/hero-banner.svg)
 
-[![Windows 10/11](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D4?style=flat-square&logo=windows&logoColor=white)](#) [![Node.js >= 18](https://img.shields.io/badge/Node.js-%E2%89%A5%2018.0-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/) [![Zero Dependencies](https://img.shields.io/badge/npm%20dependencies-0-0ea5e9?style=flat-square)](./package.json) [![Release v2.1.0](https://img.shields.io/badge/release-v2.1.0-818cf8?style=flat-square)](#) [![MIT License](https://img.shields.io/badge/license-MIT-f59e0b?style=flat-square)](./LICENSE)
+[![Windows 10/11](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D4?style=flat-square&logo=windows&logoColor=white)](#) [![Node.js >= 18](https://img.shields.io/badge/Node.js-%E2%89%A5%2018.0-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/) [![Zero Dependencies](https://img.shields.io/badge/npm%20dependencies-0-0ea5e9?style=flat-square)](./package.json) [![Release v2.2.0](https://img.shields.io/badge/release-v2.2.0-818cf8?style=flat-square)](#) [![MIT License](https://img.shields.io/badge/license-MIT-f59e0b?style=flat-square)](./LICENSE)
 
 > **把 Antigravity 额度感知做成 T3 Code 里原本就该长成的样子。**  
 > 不占聊天区一寸空间，不遮挡发送按钮，不依赖脆弱的开机自启脚本——只需将鼠标轻触左下角任务栏的棱镜图标，即可透过光学液态玻璃一眼看清 `Gemini` 与 `Claude & GPT` 双池实时余量。

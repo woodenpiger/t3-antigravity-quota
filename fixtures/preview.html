@@ -6,40 +6,41 @@
   <title>T3 Code · Antigravity Quota Showcase</title>
   <style>
     :root {
-      --foreground: #0f172a;
-      --muted-foreground: rgba(15, 23, 42, 0.58);
-      --background: #eef2f9;
-      --sidebar-bg: rgba(255, 255, 255, 0.62);
-      --card-bg: rgba(255, 255, 255, 0.72);
-      --code-bg: rgba(15, 23, 42, 0.045);
-      --composer-bg: rgba(255, 255, 255, 0.88);
-      --border: rgba(15, 23, 42, 0.09);
-      --row-hover: rgba(15, 23, 42, 0.055);
-      --row-active: rgba(37, 99, 235, 0.09);
-      --accent: #2563eb;
+      --foreground: oklch(0.16 0.006 260);
+      --muted-foreground: oklch(0.46 0.006 260);
+      --background: oklch(0.965 0.002 260);
+      --sidebar-bg: oklch(0.948 0.002 260 / 0.92);
+      --card-bg: oklch(0.992 0.001 260 / 0.88);
+      --code-bg: oklch(0.955 0.002 260);
+      --composer-bg: oklch(0.995 0.001 260 / 0.94);
+      --border: oklch(0.16 0.006 260 / 0.09);
+      --row-hover: oklch(0.16 0.006 260 / 0.05);
+      --row-active: oklch(0.16 0.006 260 / 0.07);
+      --accent: oklch(0.48 0.14 256);
     }
     html.dark {
-      --foreground: #f3f5fa;
-      --muted-foreground: #9499ad;
-      --background: #0d0f15;
-      --sidebar-bg: rgba(18, 20, 28, 0.85);
-      --card-bg: rgba(255, 255, 255, 0.035);
-      --code-bg: rgba(8, 10, 16, 0.58);
-      --composer-bg: rgba(24, 27, 38, 0.86);
-      --border: rgba(255, 255, 255, 0.075);
-      --row-hover: rgba(255, 255, 255, 0.06);
-      --row-active: rgba(129, 140, 248, 0.13);
-      --accent: #60a5fa;
+      --foreground: oklch(0.95 0.003 260);
+      --muted-foreground: oklch(0.62 0.005 260);
+      --background: oklch(0.13 0.003 260);
+      --sidebar-bg: oklch(0.115 0.003 260 / 0.96);
+      --card-bg: oklch(0.16 0.003 260 / 0.72);
+      --code-bg: oklch(0.105 0.003 260 / 0.88);
+      --composer-bg: oklch(0.155 0.003 260 / 0.92);
+      --border: oklch(1 0 0 / 0.08);
+      --row-hover: oklch(1 0 0 / 0.055);
+      --row-active: oklch(1 0 0 / 0.075);
+      --accent: oklch(0.72 0.11 252);
     }
     * { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; }
     body {
-      font-family: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", system-ui, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "HarmonyOS Sans SC", "MiSans", "Noto Sans SC", "Inter", "Microsoft YaHei", sans-serif;
+      font-feature-settings: "calt" 0 !important;
+      font-synthesis: none;
       color: var(--foreground);
       background:
-        radial-gradient(56% 52% at 38% 22%, rgba(56, 189, 248, 0.14), transparent 65%),
-        radial-gradient(48% 48% at 72% 68%, rgba(168, 85, 247, 0.17), transparent 64%),
-        radial-gradient(42% 40% at 46% 78%, rgba(52, 211, 153, 0.11), transparent 60%),
+        radial-gradient(52% 48% at 38% 36%, oklch(0.36 0.04 235 / 0.34), transparent 66%),
+        radial-gradient(46% 42% at 62% 72%, oklch(0.30 0.03 195 / 0.28), transparent 64%),
         var(--background);
       display: grid;
       grid-template-columns: 248px 1fr;
@@ -48,11 +49,13 @@
     }
     html:not(.dark) body {
       background:
-        radial-gradient(58% 52% at 38% 20%, rgba(56, 189, 248, 0.24), transparent 64%),
-        radial-gradient(50% 48% at 76% 72%, rgba(168, 85, 247, 0.20), transparent 64%),
-        radial-gradient(40% 40% at 48% 76%, rgba(16, 185, 129, 0.16), transparent 60%),
-        linear-gradient(155deg, #f5f8ff, #e8eefb);
+        radial-gradient(54% 48% at 38% 34%, oklch(0.84 0.045 232 / 0.45), transparent 64%),
+        radial-gradient(46% 44% at 64% 72%, oklch(0.87 0.04 180 / 0.36), transparent 64%),
+        linear-gradient(155deg, oklch(0.97 0.006 245), oklch(0.935 0.01 240));
     }
+    h1, h2, h3 { text-wrap: balance; }
+    p { text-wrap: pretty; line-break: strict; overflow-wrap: break-word; }
+    :lang(zh) em, :lang(ko) em { font-style: normal; }
 
     /* Realistic T3 Sidebar */
     .mock-sidebar {
@@ -315,8 +318,12 @@
               if (q.get('models') === '1') {
                 window.setTimeout(function () {
                   var btn = document.getElementById('t3-ag-models-toggle');
-                  if (btn && !btn.hidden) btn.click();
-                }, 350);
+                  if (btn && !btn.hidden) {
+                    btn.click();
+                    var sc = document.querySelector('#t3-ag-root .t3-ag-scroll');
+                    if (sc) sc.scrollTop = sc.scrollHeight;
+                  }
+                }, 180);
               }
             } else {
               window.__T3_AG_QUOTA_UI__.showMini();
