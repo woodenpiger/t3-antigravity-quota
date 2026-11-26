@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { readAsarHeader, walkFiles, readEntryData } from './asar-lib.mjs';
@@ -60,7 +61,28 @@ function saveState(patch) {
   writeJson(AUTO_HEAL_STATE, Object.assign({}, prev, patch, { updatedAt: new Date().toISOString(), pid: process.pid }));
 }
 
-export function inspectAsarInjection(file) {
+function computePayloadBuildTag(rootDir) {
+  const rels = [
+    ['renderer', 'antigravity-quota.js'],
+    ['renderer', 'antigravity-quota.css'],
+    ['scripts', 'ag-quota-hook.mjs'],
+    ['helper', 'quota-service.cjs'],
+    ['helper', 'lib', 'quota-core.cjs'],
+    ['helper', 'lib', 'quota-router.cjs'],
+    ['helper', 'lib', 'http-post.cjs'],
+    ['helper', 'lib', 'win-proxy.cjs'],
+    ['helper', 'lib', 'agy-refresh.cjs'],
+  ];
+  const hash = crypto.createHash('sha256');
+  for (const parts of rels) {
+    const p = path.join(rootDir, ...parts);
+    if (!fs.existsSync(p)) return null;
+    hash.update(fs.readFileSync(p));
+  }
+  return hash.digest('hex').slice(0, 10);
+}
+
+export function inspectAsarInjection(file, expectedBuildTag) {
   if (!fs.existsSync(file)) return { exists: false, injected: false, version: 'missing' };
   try {
     const h = readAsarHeader(file);
@@ -73,9 +95,11 @@ export function inspectAsarInjection(file) {
     if (!idx || !bin) return { exists: true, injected: false, version: 'invalid' };
     const html = readEntryData(file, h.dataOffset, { size: Number(idx.size), offset: Number(idx.offset) }).toString('utf8');
     const binTxt = readEntryData(file, h.dataOffset, { size: Number(bin.size), offset: Number(bin.offset) }).toString('utf8');
-    const injected = html.includes(MARK_START) && binTxt.includes(BIN_MARK_START);
+    const hasMarkers = html.includes(MARK_START) && binTxt.includes(BIN_MARK_START);
+    const tagOk = !expectedBuildTag || html.includes('?v=' + expectedBuildTag);
+    const injected = hasMarkers && tagOk;
     const version = t3VersionFromAsar(file, readAsarHeader, walkFiles, readEntryData);
-    return { exists: true, injected, version };
+    return { exists: true, injected, hasMarkers, tagOk, version };
   } catch (err) {
     return { exists: true, injected: false, version: 'error', error: err && err.message ? err.message : String(err) };
   }
@@ -166,7 +190,8 @@ async function evaluate(trigger) {
       }
     }
 
-    const status = inspectAsarInjection(asarPath);
+    const expectedTag = computePayloadBuildTag(fs.existsSync(path.join(PAYLOAD_DIR, 'scripts', 'install.mjs')) ? PAYLOAD_DIR : path.resolve(scriptDir, '..'));
+    const status = inspectAsarInjection(asarPath, expectedTag);
     if (!status.exists) {
       saveState({ status: 'asar-missing', pendingHeal: false, installDir });
       return;

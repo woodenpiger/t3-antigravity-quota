@@ -174,8 +174,8 @@ async function httpsPostJson(url, options) {
     const nextHref = fresh ? fresh.url.origin : null;
     if (nextHref === prevHref) {
       if (!resolved) throw err;
-      // Configured proxy may be down while direct access works; try direct once.
-      return sendWithProxy(target, opts, Math.min(timeoutMs, 5000), null);
+      // Configured proxy may be down while direct access works; try direct once with capped budget.
+      return sendWithProxy(target, opts, Math.min(timeoutMs, 3_500), null);
     }
     return sendWithProxy(target, opts, timeoutMs, fresh ? fresh.url : null);
   }

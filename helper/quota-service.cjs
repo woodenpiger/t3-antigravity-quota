@@ -24,7 +24,7 @@ const CODE_ASSIST_PATH = '/v1internal:loadCodeAssist';
 
 const ASSIST_TTL_MS = 30 * 60_000;
 const MODELS_TTL_MS = 5 * 60_000;
-const ACP_COOLDOWN_MS = 10 * 60_000;
+const ACP_COOLDOWN_MS = 60_000;
 const RATE_LIMIT_BACKOFF_MS = 5 * 60_000;
 
 function endpointsForAuthMethod(authMethod) {
@@ -139,9 +139,15 @@ async function refreshViaOAuthSecret(acp, token, deps) {
 async function postInternalApi(apiPath, accessToken, projectId, deps, secrets, authMethod) {
   const body = projectId ? JSON.stringify({ project: projectId }) : '{}';
   const endpoints = endpointsForAuthMethod(authMethod);
+  const startedAt = deps.now();
   let lastStatus = null;
   let lastError = null;
-  for (const endpoint of endpoints) {
+  for (let i = 0; i < endpoints.length; i += 1) {
+    const endpoint = endpoints[i];
+    const elapsed = Math.max(0, deps.now() - startedAt);
+    const remainingBudget = deps.timeoutMs - elapsed;
+    if (i > 0 && remainingBudget < 2_500) break;
+    const perCallTimeout = Math.max(2_500, i === 0 ? deps.timeoutMs : remainingBudget);
     let res;
     try {
       res = await deps.postJson(endpoint + apiPath, {
@@ -152,10 +158,13 @@ async function postInternalApi(apiPath, accessToken, projectId, deps, secrets, a
           accept: 'application/json',
         },
         body,
-        timeoutMs: deps.timeoutMs,
+        timeoutMs: perCallTimeout,
       });
     } catch (err) {
       lastError = err && err.code === 'ETIMEDOUT' ? '请求额度超时' : '连接额度服务失败';
+      if (err && err.code === 'ETIMEDOUT' && (deps.now() - startedAt) >= Math.floor(deps.timeoutMs * 0.65)) {
+        break;
+      }
       continue;
     }
     lastStatus = res ? res.status : null;
@@ -170,7 +179,7 @@ async function postInternalApi(apiPath, accessToken, projectId, deps, secrets, a
   return { ok: false, status: 0, error: core.sanitizeError(lastError || '额度接口不可达', secrets) };
 }
 
-async function obtainAccessToken(account, initialToken, deps, forceRefresh, acctState) {
+async function obtainAccessToken(account, initialToken, deps, forceRefresh, acctState, manualRefresh) {
   const nowMs = deps.now();
   if (
     !forceRefresh &&
@@ -209,21 +218,36 @@ async function obtainAccessToken(account, initialToken, deps, forceRefresh, acct
   if (!initialToken.refreshToken || typeof deps.refreshViaAcp !== 'function') {
     return { ok: false, error: core.REFRESH_VIA_T3, needsT3Refresh: true };
   }
-  if (acctState.acpCooldownUntil && nowMs < acctState.acpCooldownUntil) {
+  const tokenFingerprint = `${initialToken.refreshToken || ''}:${initialToken.accessToken || ''}:${initialToken.expiryDate || ''}`;
+  if (acctState.acpRevokedToken && acctState.acpRevokedToken !== tokenFingerprint) {
+    acctState.acpRevokedToken = '';
+    acctState.acpCooldownUntil = 0;
+  }
+  const hasRevokedAuth = Boolean(acctState.acpRevokedToken && acctState.acpRevokedToken === tokenFingerprint);
+  if (acctState.acpCooldownUntil && nowMs < acctState.acpCooldownUntil && (!manualRefresh || hasRevokedAuth)) {
     return { ok: false, error: core.REFRESH_VIA_T3, needsT3Refresh: true };
   }
+  if (manualRefresh && !hasRevokedAuth) acctState.acpCooldownUntil = 0;
   const acpRes = await deps.refreshViaAcp(account.profileDir, {
     authMethod: initialToken.authMethod === 'oauth-business' ? 'oauth-business' : 'oauth-personal',
-    timeoutMs: Math.min(deps.timeoutMs, 8_000),
+    timeoutMs: Math.min(deps.timeoutMs, 7_000),
   });
   if (!acpRes || !acpRes.ok) {
-    acctState.acpCooldownUntil = deps.now() + ACP_COOLDOWN_MS;
+    const needsT3Refresh = !acpRes || acpRes.needsT3Refresh !== false;
+    if (needsT3Refresh) {
+      acctState.acpRevokedToken = tokenFingerprint;
+      acctState.acpCooldownUntil = deps.now() + 5 * 60_000;
+    } else {
+      acctState.acpRevokedToken = '';
+      acctState.acpCooldownUntil = deps.now() + ACP_COOLDOWN_MS;
+    }
     return {
       ok: false,
       error: (acpRes && acpRes.error) || core.REFRESH_VIA_T3,
-      needsT3Refresh: !acpRes || acpRes.needsT3Refresh !== false,
+      needsT3Refresh,
     };
   }
+  acctState.acpRevokedToken = '';
   const reloaded = readAccountToken(account);
   if (!reloaded.ok) {
     acctState.acpCooldownUntil = deps.now() + ACP_COOLDOWN_MS;
@@ -244,7 +268,7 @@ async function obtainAccessToken(account, initialToken, deps, forceRefresh, acct
   };
 }
 
-async function fetchAccount(account, deps, acctState) {
+async function fetchAccount(account, deps, acctState, manualRefresh) {
   const nowStart = deps.now();
   if (acctState.rateLimitUntil && nowStart < acctState.rateLimitUntil) {
     return {
@@ -263,7 +287,7 @@ async function fetchAccount(account, deps, acctState) {
   const projectId =
     (token.acp && typeof token.acp.project_id === 'string' && token.acp.project_id) || cachedProjectId || null;
 
-  let auth = await obtainAccessToken(account, token, deps, false, acctState);
+  let auth = await obtainAccessToken(account, token, deps, false, acctState, manualRefresh);
   if (!auth.ok) {
     return { ok: false, label, email: token.email, error: auth.error, needsT3Refresh: auth.needsT3Refresh === true };
   }
@@ -285,7 +309,7 @@ async function fetchAccount(account, deps, acctState) {
 
   if (!summary.ok && summary.status === 401 && !auth.refreshed) {
     acctState.oauth = null;
-    const retryAuth = await obtainAccessToken(account, token, deps, true, acctState);
+    const retryAuth = await obtainAccessToken(account, token, deps, true, acctState, manualRefresh);
     if (retryAuth.ok) {
       auth = retryAuth;
       [summary, modelsRes, assistRes] = await runCalls(auth.accessToken, auth.secrets);
@@ -381,7 +405,7 @@ function createQuotaService(options) {
     return st;
   }
 
-  async function collect() {
+  async function collect(manualRefresh) {
     const accounts = listAccounts(deps.accountsRoot);
     if (!accounts.length) {
       return {
@@ -395,7 +419,7 @@ function createQuotaService(options) {
     const results = [];
     const errors = [];
     for (const account of accounts) {
-      const result = await fetchAccount(account, deps, accountState(account.hash));
+      const result = await fetchAccount(account, deps, accountState(account.hash), manualRefresh);
       if (result.ok) {
         results.push({
           label: result.label,
@@ -449,12 +473,12 @@ function createQuotaService(options) {
       }
     }
     if (inflight) return inflight;
-    const hardDeadlineMs = Math.max(deps.timeoutMs + 2_500, 12_500);
+    const hardDeadlineMs = Math.max(deps.timeoutMs + 8_500, 18_000);
     let guardTimer = null;
     const task = (async () => {
       try {
         const payload = await Promise.race([
-          collect(),
+          collect(refresh),
           new Promise((_, reject) => {
             guardTimer = setTimeout(() => {
               const e = new Error('请求额度超时');

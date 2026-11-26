@@ -1,6 +1,6 @@
 {
   "name": "t3-antigravity-quota",
-  "version": "2.3.0",
+  "version": "2.3.2",
   "description": "4-Layer SDF Liquid Glass Antigravity quota monitor plugin for T3 Code (Beta) on Windows — zero dependencies, embedded server hook, and automatic T3 Code update survival.",
   "private": true,
   "license": "MIT",

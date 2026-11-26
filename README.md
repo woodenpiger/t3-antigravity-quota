@@ -1,6 +1,6 @@
 ![T3 Antigravity Quota Banner](./docs/assets/hero-banner.svg)
 
-[![Windows 10/11](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D4?style=flat-square&logo=windows&logoColor=white)](#) [![Node.js >= 18](https://img.shields.io/badge/Node.js-%E2%89%A5%2018.0-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/) [![Zero Dependencies](https://img.shields.io/badge/npm%20dependencies-0-0ea5e9?style=flat-square)](./package.json) [![Release v2.3.0](https://img.shields.io/badge/release-v2.3.0-111827?style=flat-square)](https://github.com/woodenpiger/t3-antigravity-quota/releases) [![MIT License](https://img.shields.io/badge/license-MIT-4b5563?style=flat-square)](./LICENSE)
+[![Windows 10/11](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D4?style=flat-square&logo=windows&logoColor=white)](#) [![Node.js >= 18](https://img.shields.io/badge/Node.js-%E2%89%A5%2018.0-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/) [![Zero Dependencies](https://img.shields.io/badge/npm%20dependencies-0-0ea5e9?style=flat-square)](./package.json) [![Release v2.3.2](https://img.shields.io/badge/release-v2.3.2-111827?style=flat-square)](https://github.com/woodenpiger/t3-antigravity-quota/releases) [![MIT License](https://img.shields.io/badge/license-MIT-4b5563?style=flat-square)](./LICENSE)
 
 > **把 Antigravity 额度感知做成 T3 Code 里原本就该长成的样子。**  
 > 不占聊天区一寸空间，不遮挡发送按钮，不依赖脆弱的开机自启脚本——只需将鼠标轻触左下角侧栏的极简棱镜图标，即可透过 **4 层 SDF 光学液态玻璃** 一眼看清 `Gemini` 与 `Claude & GPT` 双池实时余量。
@@ -41,15 +41,15 @@
 
 ---
 
-## ✨ v2.3.0 架构与视觉亮点
+## ✨ v2.3.2 架构与视觉亮点
 
-| 过去常见的痛点 | T3 Antigravity Quota v2.3.0 的解法 |
+| 过去常见的痛点 | T3 Antigravity Quota v2.3.2 的解法 |
 | :--- | :--- |
 | T3 Code 每次自动更新覆盖 `server.asar`，插件直接消失 | **内置零空转自愈守护（`auto-heal.mjs`）** + 持久化离线副本（`%LOCALAPPDATA%\t3code-antigravity-quota\payload`），感知更新后自动在 T3 退出/开机时无感重新注入，绝不降级新版 `server.asar` |
 | 悬浮球遮挡右下角发送键，启动页/设置页也到处漂浮 | **原生嵌入侧栏底栏图标列**，启动页与设置页自动隐身，聊天输入区 100% 零遮挡 |
-| 依赖开机自启脚本或独立后台进程，重启电脑即失联 | **直接内嵌至 T3 自身 HTTP 服务（`/__t3_ag_quota`）**，通过 `desktopBridge` 动态寻址，随开随用 |
-| 先开 T3 再开 Clash / v2rayN，或代理端口变化即断网 | **动态解析环境变量与 Windows 注册表代理**，连接失败自动刷新代理缓存并支持直连回退 |
-| OAuth Token 1 小时过期即报错，或额度归零时无限转圈 | **内置 `agy.exe acp` 无弹窗静默续期** + 四层挂钟硬超时（`11s` / `12.5s` / `8s` 进程强回收） |
+| 依赖开机自启脚本或独立后台进程，重启电脑即失联 | **直接内嵌至 T3 自身 HTTP 服务（`/__t3_ag_quota`）**，并行探活与 `127.0.0.1:3773` 兜底，兼容 `0.1.12` 剥离 Origin 策略 |
+| 先开 T3 再开 Clash / v2rayN，或代理端口变化即断网 | **动态解析环境变量与 Windows 注册表代理**，连接失败自动刷新代理缓存并支持 `3.5s` 预算直连回退 |
+| OAuth Token 1 小时过期即报错，或额度归零时无限转圈 | **内置 `agy.exe acp` 无弹窗静默续期** + 有序四层硬超时（`22s` / `18s` / `7s` 进程强回收） |
 | 廉价霓虹发光、紫蓝 AI 雾感、毛玻璃糊成死灰实底框 | **4 层真·液态玻璃 + Suzhe 字体体系**：低 Alpha 透射（`0.44–0.64`）、边缘 SDF `feDisplacementMap` 折射、`1.25px` 镜面描边、内玻璃子卡分层与 `blur(18px)` 低开销渲染预算 |
 
 完整版本变更记录请参阅 [CHANGELOG.md](./CHANGELOG.md)。
@@ -63,7 +63,7 @@
 
 ### 方式 A：下载 Release 压缩包双击安装（最省心）
 
-1. 前往 [Releases](https://github.com/woodenpiger/t3-antigravity-quota/releases) 下载最新版 **`t3-antigravity-quota-v2.3.0.zip`** 并解压；
+1. 前往 [Releases](https://github.com/woodenpiger/t3-antigravity-quota/releases) 下载最新版 **`t3-antigravity-quota-v2.3.2.zip`** 并解压；
 2. 双击运行根目录下的 **`install.cmd`** —— 脚本会自动安全关闭 T3 Code、在独立目录保存原版 SHA-256 备份、完成注入、注册 **T3 更新自愈守护**，并重新启动 T3 Code（若不需要自动更新自愈，可命令行加 `--no-auto-heal`）。
 
 ### 方式 B：命令行克隆安装
@@ -103,7 +103,7 @@ flowchart LR
     UI["T3 渲染层<br/>底栏图标 · 悬停小窗 · 详情面板"] -->|"desktopBridge 动态端口<br/>GET /__t3_ag_quota/api/quota"| HOOK["T3 内嵌路由钩子<br/>ag-quota-hook.mjs"]
     HOOK --> SVC["Quota Service<br/>60s 缓存 · 429 熔断 · 401 自动续期"]
     SVC -->|"读取本地授权"| AUTH["本机凭证目录<br/>~/.t3/userdata/providers/antigravity"]
-    SVC -->|"过期零弹窗续期"| ACP["agy.exe acp<br/>8s 超时 · 10m 冷却锁"]
+    SVC -->|"过期零弹窗续期"| ACP["agy.exe acp<br/>7s 超时 · 分级冷却锁"]
     SVC -->|"实时感知系统代理"| PROXY["Windows 注册表代理<br/>HKCU Internet Settings + ENV"]
     PROXY --> API["Google Cloud Code 接口<br/>QuotaSummary + Models + CodeAssist"]
 ```
@@ -129,9 +129,9 @@ flowchart LR
 - **严格遵循官方请求规范（防封号保护）**：
   - **零后台静默轮询**：面板收起时不进行任何后台定时轮询；仅在用户主动悬停/展开且缓存满 `60s` 时按需单次同步。
   - **请求体积缩减 >66%**：日常查询仅发起单次轻量 `retrieveUserQuotaSummary`；套餐信息（`loadCodeAssist`）缓存 `30` 分钟、模型目录（`fetchAvailableModels`）缓存 `5` 分钟，手动刷新内置 `15s` 防连点节流。
-  - **429 / 403 熔断退避与 ACP 冷却锁**：若遇上游 `429` / `403` 立即触发 `5` 分钟熔断冷却（绝不死循环重试）；静默凭证续期内置 `10` 分钟冷却锁与进程管道强销毁，杜绝并发抢占。
-  - **四层硬超时防无限转圈**：前端 `fetch`（`11s`）、服务端聚合（`12.5s`）、ACP 子进程（`8s`）与代理隧道底层均设挂钟硬超时，断网或额度归零时绝不卡死。
-- **严格通信与凭据边界**：仅访问本机回环 `127.0.0.1` 与 Google 官方端点（`daily-cloudcode-pa.googleapis.com`、`cloudcode-pa.googleapis.com`、`oauth2.googleapis.com`）；所有 Token 仅驻留内存，错误报文经 `sanitizeError()` 脱敏；内嵌路由锁定回环与 `t3code://app` 来源。
+  - **429 / 403 熔断退避与分级 ACP 冷却锁**：若遇上游 `429` / `403` 立即触发严格 `5` 分钟熔断冷却（手动点击亦不可绕过）；静默凭证续期对瞬时超时设 `60s` 后台冷却（允许手动重试），对 OAuth 失效/需重新登录态锁定 `5` 分钟冷却直至磁盘换新凭证，杜绝并发抢占与重复拉起登录。
+  - **四层有序硬超时防无限转圈**：前端 `fetch`（`22s`）> 服务端聚合（`18s`）> ACP 子进程（`7s`）与代理隧道直连回退（`3.5s`）均设严格递减挂钟预算，断网或额度归零时绝不卡死。
+- **严格通信与凭据边界**：仅访问本机回环 `127.0.0.1` 与 Google 官方端点（`daily-cloudcode-pa.googleapis.com`、`cloudcode-pa.googleapis.com`、`oauth2.googleapis.com`）；所有 Token 仅驻留内存，错误报文经 `sanitizeError()` 脱敏；内嵌路由拒绝一切非本机/非 `t3code://app` 显式 `Origin`（返回 `403`），仅兼容无 `Origin` 的桌面主进程剥离请求。
 - **无障碍与渲染预算**：支持 `prefers-reduced-transparency: reduce`（自动退回不透明高对比表面）、`prefers-reduced-motion: reduce` 与 Windows 高对比度模式（`forced-colors: active`）；`backdrop-filter` 严格控制在 `≤ 18px` 且零 `requestAnimationFrame` 空转循环。
 - **字节级无损还原**：首次安装自动生成带版本号与 SHA-256 指纹的 `server.asar.bak-*` 原始备份，保留全部 `24` 个 `unpacked` 原生二进制模块，绝不修改 `app.asar`。
 
@@ -151,7 +151,7 @@ t3-antigravity-quota/
 │   ├── quota-service.cjs         # 多账号扫描、ACP 续期、分层缓存与 429 熔断
 │   ├── fixture-server.cjs        # 本地多场景 Mock 服务（showcase / healthy / exhausted）
 │   ├── lib/                      # 核心标准化、路由分发、注册表代理与 HTTPS 客户端
-│   └── test/quota.test.cjs       # 20 项 Node 原生单元测试
+│   └── test/quota.test.cjs       # 23 项 Node 原生单元测试
 ├── scripts/
 │   ├── ag-quota-hook.mjs         # 挂载至 T3 server.asar 的内嵌 HTTP 路由钩子
 │   ├── auto-heal.mjs             # 零空转 T3 更新自愈守护（感知 server.asar 覆盖并自动重注）
@@ -165,7 +165,7 @@ t3-antigravity-quota/
 本地运行全部测试与独立预览沙箱（无需改动真实 T3 客户端）：
 
 ```powershell
-# 运行全部 20 项单元测试
+# 运行全部 23 项单元测试
 npm test
 
 # 终端 1：启动展示级 Mock 数据源

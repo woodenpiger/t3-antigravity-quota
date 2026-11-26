@@ -226,7 +226,19 @@ if (isMain) {
   const winProxy = fs.readFileSync(path.join(projectRoot, 'helper', 'lib', 'win-proxy.cjs'));
   const agyRefresh = fs.readFileSync(path.join(projectRoot, 'helper', 'lib', 'agy-refresh.cjs'));
 
-  const buildTag = crypto.createHash('sha256').update(js).update(css).update(hook).digest('hex').slice(0, 10);
+  const buildTag = crypto
+    .createHash('sha256')
+    .update(js)
+    .update(css)
+    .update(hook)
+    .update(quotaService)
+    .update(quotaCore)
+    .update(quotaRouter)
+    .update(httpPost)
+    .update(winProxy)
+    .update(agyRefresh)
+    .digest('hex')
+    .slice(0, 10);
   const injectedIndex = Buffer.from(injectHtml(sourceIndex, null, buildTag), 'utf8');
   const patchedBin = Buffer.from(injectBinMjs(sourceBin), 'utf8');
   console.log('t3Version=' + version + ' pluginVersion=' + PLUGIN_VERSION + ' buildTag=' + buildTag);

@@ -4,12 +4,12 @@
   if (window.__T3_AG_QUOTA_LOADED__) return;
   window.__T3_AG_QUOTA_LOADED__ = true;
 
-  var VERSION = '2.3.0';
+  var VERSION = '2.3.2';
   var STORAGE_KEY = 't3-antigravity-quota:v2';
   var MIN_INTERVAL_MS = 5000;
   var FRESH_TTL_MS = 60_000;
   var MANUAL_COOLDOWN_MS = 15_000;
-  var FETCH_TIMEOUT_MS = 11_000;
+  var FETCH_TIMEOUT_MS = 22_000;
   var ACTIVE_SYNC_MS = 60_000;
   var STARTUP_RETRY_DELAYS = [1500, 3500, 7000];
   var nf = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 1 });
@@ -140,10 +140,11 @@
       push('http://127.0.0.1:' + p);
     }
 
-    // Only consult legacy cached base after live discovery candidates
+    // Only consult legacy cached base & default embedded port after live discovery candidates
     if (!hasLiveBootstrap && !window.__T3_AG_FIXTURE_PREVIEW__) {
       var storedBase = storeGet(STORAGE_KEY + ':base');
       if (storedBase) push(storedBase);
+      push('http://127.0.0.1:3773/__t3_ag_quota');
     }
     return list;
   }
@@ -173,9 +174,22 @@
   async function ensureApiBase(signal) {
     if (state.apiBase) return state.apiBase;
     var candidates = candidateApiBases();
-    for (var i = 0; i < candidates.length; i += 1) {
-      if (await probeBase(candidates[i], signal)) {
-        state.apiBase = candidates[i];
+    if (!candidates.length) throw new Error('额度服务未启动或连接失败');
+    if (await probeBase(candidates[0], signal)) {
+      state.apiBase = candidates[0];
+      if (!window.__T3_AG_FIXTURE_PREVIEW__ && !hasDesktopBridge()) {
+        storeSet(STORAGE_KEY + ':base', state.apiBase);
+      }
+      return state.apiBase;
+    }
+    var rest = candidates.slice(1);
+    if (rest.length) {
+      var settled = await Promise.all(rest.map(function (c) {
+        return probeBase(c, signal).then(function (ok) { return ok ? c : null; });
+      }));
+      var hit = settled.find(Boolean);
+      if (hit) {
+        state.apiBase = hit;
         if (!window.__T3_AG_FIXTURE_PREVIEW__ && !hasDesktopBridge()) {
           storeSet(STORAGE_KEY + ':base', state.apiBase);
         }
@@ -868,6 +882,8 @@
     } else if (state.payload && state.savedAt && Date.now() - state.savedAt > 5 * 60_000) {
       status.textContent = '缓存较旧，建议刷新';
       status.classList.add('t3-ag-status--warn');
+    } else if (state.payload && state.payload.rateProtected) {
+      status.textContent = '刚刚已同步 · 15 秒防频控保护';
     } else if (state.payload) {
       status.textContent = '实时 · 来自本机 Antigravity 凭证';
     } else {
@@ -1211,7 +1227,16 @@
       return;
     }
     var now = Date.now();
-    if (force && state.lastManualForceAt && now - state.lastManualForceAt < MANUAL_COOLDOWN_MS && !state.error) {
+    if (
+      force &&
+      state.lastManualForceAt &&
+      now - state.lastManualForceAt < MANUAL_COOLDOWN_MS &&
+      !state.error &&
+      !(state.payload && state.payload.stale)
+    ) {
+      if (state.payload) {
+        state.payload = Object.assign({}, state.payload, { rateProtected: true });
+      }
       render();
       return;
     }

@@ -2,6 +2,14 @@
 
 All notable changes to **T3 Antigravity Quota** will be documented in this file.
 
+## [2.3.2] - 2026-11-26
+
+### T3 Code 0.1.12 CORS Fix, Timeout Tuning & OAuth Safety Hardening
+- **T3 Code 0.1.12 Stripped-Origin CORS Fix (`helper/lib/quota-router.cjs`, `renderer/antigravity-quota.js`)**: Handled Electron main-process `stripDesktopOriginHeaders` stripping `Origin: t3code://app` on outbound loopback requests in T3 Code `0.1.12`, returning CORS headers for origin-less loopback requests while continuing to return `403` to any disallowed browser/iframe `Origin` (`https://*`, `'null'`). Also added parallel `127.0.0.1:3773` fallback discovery in `ensureApiBase()` and cleaner error mapping (`stale` / `rateProtected`).
+- **Ordered Multi-Layer Timeout Budget (`renderer/antigravity-quota.js`, `helper/quota-service.cjs`, `helper/lib/http-post.cjs`)**: Aligned deadlines strictly from outer to inner (`22s` frontend fetch > `18s` service deadline > `7s` ACP renewal / `3.5s` proxy direct fallback), eliminating spurious timeout races where frontend aborted before backend completed proxy/ACP fallback.
+- **Google OAuth-Compliant ACP Cooldown Refinement (`helper/quota-service.cjs`)**: Separated transient ACP timeouts (`60s` background cooldown, manual refresh retries immediately) from revoked/interactive-login OAuth states (`needsT3Refresh: true`, strict `5m` cooldown even across repeated manual clicks, automatically cleared once a fresh `antigravity-oauth-token` is written on disk). Upstream HTTP `429`/`403` `5m` circuit breaker remains strictly non-bypassable.
+- **Auto-Heal & CLI Robustness (`scripts/install.mjs`, `scripts/auto-heal.mjs`, `scripts/health.mjs`)**: Included backend helper hashes in `buildTag` so `auto-heal.mjs` detects backend updates cleanly; fixed `parseHealthArgs` so flags like `--install-dir` and `--refresh` no longer produce `NaN` ports. Expanded unit test coverage to `23/23`.
+
 ## [2.3.0] - 2026-11-26
 
 ### T3 Code Auto-Update Survival & Safety Hardening

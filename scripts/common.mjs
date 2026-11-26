@@ -4,7 +4,7 @@ import os from 'node:os';
 import crypto from 'node:crypto';
 import { execFileSync, spawn } from 'node:child_process';
 
-export const PLUGIN_VERSION = '2.3.0';
+export const PLUGIN_VERSION = '2.3.2';
 export const PLUGIN_NAME = 't3code-antigravity-quota';
 export const STARTUP_LNK = 'T3 Antigravity Quota.lnk';
 export const AUTO_HEAL_REG_NAME = 'T3AntigravityQuotaAutoHeal';

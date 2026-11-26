@@ -7,7 +7,7 @@
 
 const core = require('./quota-core.cjs');
 
-const ALLOWED_ORIGIN = /^(?:http:\/\/(?:127\.0\.0\.1|localhost|\[::1\])(?::\d{1,5})?|t3code:\/\/app)$/i;
+const ALLOWED_ORIGIN = /^(?:http:\/\/(?:127\.0\.0\.1|localhost|\[::1\])(?::\d{1,5})?|t3code(?:-dev)?:\/\/app)$/i;
 
 function corsHeaders(req) {
   const origin = req && req.headers ? req.headers.origin : undefined;
@@ -16,7 +16,16 @@ function corsHeaders(req) {
     'x-content-type-options': 'nosniff',
     vary: 'Origin',
   };
-  if (!origin) return { headers, allowed: true };
+  if (!origin) {
+    // T3 Code >=0.1.12 strips Electron's `Origin: t3code://app` in main-process onBeforeSendHeaders,
+    // while Blink still enforces CORS on responses to the renderer. Explicit disallowed origins
+    // still hit the allowlist check below and receive 403.
+    headers['access-control-allow-origin'] = '*';
+    headers['access-control-allow-methods'] = 'GET, OPTIONS';
+    headers['access-control-allow-headers'] = 'content-type, accept';
+    headers['access-control-max-age'] = '600';
+    return { headers, allowed: true };
+  }
   if (!ALLOWED_ORIGIN.test(origin)) return { headers, allowed: false };
   headers['access-control-allow-origin'] = origin;
   headers['access-control-allow-methods'] = 'GET, OPTIONS';

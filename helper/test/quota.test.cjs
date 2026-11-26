@@ -345,6 +345,12 @@ test('quota-router enforces prefix and local/t3code origins', () => {
   assert.equal(okOrigin.result().status, 200);
   assert.equal(okOrigin.result().headers['access-control-allow-origin'], 't3code://app');
   assert.equal(JSON.parse(okOrigin.result().body).mode, 'embedded');
+
+  // T3 Code >=0.1.12 strips Electron `Origin` before forwarding; CORS wildcard must still be sent
+  const strippedOrigin = mockRes();
+  assert.equal(handler({ url: '/__t3_ag_quota/health', method: 'GET', headers: {} }, strippedOrigin), true);
+  assert.equal(strippedOrigin.result().status, 200);
+  assert.equal(strippedOrigin.result().headers['access-control-allow-origin'], '*');
 });
 
 test('sanitizeError strips bearer tokens and long token shapes', () => {
@@ -479,4 +485,88 @@ test('install source selection never downgrades after T3 Code auto-update', asyn
     backupIsClean: true,
   });
   assert.deepEqual(mismatch, { mode: 'live-strip', useBackup: false });
+});
+
+test('manual refresh bypasses transient ACP cooldown while respecting background cooldown', async () => {
+  const root = tempRoot();
+  seedToken(root, 'a'.repeat(64), { expiry: new Date(NOW - 3600_000).toISOString() });
+  let acpAttempt = 0;
+  const refreshViaAcp = async (profileDir) => {
+    acpAttempt += 1;
+    if (acpAttempt === 1) {
+      return { ok: false, needsT3Refresh: false, error: '静默刷新登录超时，请重试' };
+    }
+    const tokenFile = path.join(profileDir, 'antigravity-acp', 'antigravity-oauth-token');
+    const cur = JSON.parse(fs.readFileSync(tokenFile, 'utf8'));
+    cur.token.access_token = 'ya29.RECOVERED-AFTER-MANUAL';
+    cur.token.expiry = new Date(NOW + 3600_000).toISOString();
+    fs.writeFileSync(tokenFile, JSON.stringify(cur));
+    return { ok: true };
+  };
+  const post = fakePost((url) => {
+    if (url.endsWith(QUOTA_PATH)) return { status: 200, json: SUMMARY };
+    return { status: 404, json: null };
+  });
+  let clock = NOW;
+  const svc = createQuotaService({ accountsRoot: root, postJson: post, refreshViaAcp, now: () => clock, timeoutMs: 9_000 });
+
+  const firstFail = await svc.getQuota(false);
+  assert.equal(firstFail.ok, false);
+  assert.equal(acpAttempt, 1);
+
+  // Background poll within 60s hits ACP cooldown without spawning agy.exe
+  clock += 10_000;
+  const bgBlocked = await svc.getQuota(false);
+  assert.equal(bgBlocked.ok, false);
+  assert.equal(acpAttempt, 1);
+
+  // Manual refresh (refresh=true) bypasses ACP cooldown and succeeds immediately
+  const manualOk = await svc.getQuota(true);
+  assert.equal(manualOk.ok, true);
+  assert.equal(acpAttempt, 2);
+});
+
+test('manual refresh still enforces revoked-OAuth cooldown until token file changes on disk', async () => {
+  const root = tempRoot();
+  seedToken(root, 'b'.repeat(64), { expiry: new Date(NOW - 3600_000).toISOString() });
+  let acpAttempt = 0;
+  const refreshViaAcp = async () => {
+    acpAttempt += 1;
+    return { ok: false, needsT3Refresh: true, error: '请先在 T3 Code 重新登录 Antigravity' };
+  };
+  const post = fakePost((url) => {
+    if (url.endsWith(QUOTA_PATH)) return { status: 200, json: SUMMARY };
+    return { status: 404, json: null };
+  });
+  let clock = NOW;
+  const svc = createQuotaService({ accountsRoot: root, postJson: post, refreshViaAcp, now: () => clock, timeoutMs: 9_000 });
+
+  const first = await svc.getQuota(false);
+  assert.equal(first.ok, false);
+  assert.equal(acpAttempt, 1);
+
+  // Repeated manual clicks within 5m must NOT repeatedly invoke agy.exe when OAuth grant is revoked
+  clock += 30_000;
+  const manualBlocked = await svc.getQuota(true);
+  assert.equal(manualBlocked.ok, false);
+  assert.equal(acpAttempt, 1);
+
+  // Once the user re-authenticates in T3 Code (new token written on disk), cooldown resets immediately
+  seedToken(root, 'b'.repeat(64), {
+    token: 'ya29.NEW-FRESH-TOKEN',
+    expiry: new Date(NOW + 3600_000).toISOString(),
+  });
+  const recovered = await svc.getQuota(true);
+  assert.equal(recovered.ok, true);
+  assert.equal(acpAttempt, 1);
+});
+
+test('health.mjs argument parser handles --install-dir and --refresh without NaN port', async () => {
+  const { pathToFileURL } = require('node:url');
+  const healthMod = await import(pathToFileURL(path.join(__dirname, '..', '..', 'scripts', 'health.mjs')).href);
+  const parsed = healthMod.parseHealthArgs(['--install-dir', 'C:\\Program Files\\t3code', '--refresh']);
+  assert.equal(parsed.port, null);
+  assert.equal(parsed.installDir, 'C:\\Program Files\\t3code');
+  assert.equal(parsed.refresh, true);
+  assert.equal(healthMod.parseHealthArgs(['47821']).port, 47821);
 });
