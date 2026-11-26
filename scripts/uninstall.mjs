@@ -13,7 +13,9 @@ import {
   readJson,
   runPowerShell,
   sha256File,
+  stopAutoHeal,
   stopT3,
+  unregisterAutoHeal,
 } from './common.mjs';
 
 const argv = process.argv.slice(2);
@@ -39,6 +41,10 @@ if (running.pids.length && !flag('close-t3')) {
 }
 if (running.pids.length) console.log('closing T3 Code: ' + stopT3());
 
+// Stop and unregister auto-heal guard + any legacy background helpers
+console.log('auto-heal stop: ' + stopAutoHeal());
+unregisterAutoHeal();
+
 const stopScript = [
   '$hits = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq "node.exe" -and $_.CommandLine -and $_.CommandLine -like "*t3code-antigravity-quota*" }',
   'foreach ($h in $hits) { Stop-Process -Id $h.ProcessId -Force -ErrorAction SilentlyContinue }',
@@ -46,8 +52,30 @@ const stopScript = [
 ].join('; ');
 try { console.log(runPowerShell(stopScript).trim()); } catch (err) { console.log('helper stop warning: ' + err.message); }
 
+// Inspect live server.asar first so we NEVER overwrite a newer clean T3 update with an older backup
+const header = readAsarHeader(asarPath);
+let idx = null;
+let bin = null;
+walkFiles(header.header, (p, e) => {
+  if (p === 'apps/server/dist/client/index.html') idx = e;
+  if (p === 'apps/server/dist/bin.mjs') bin = e;
+});
+const liveHtml = idx ? readEntryData(asarPath, header.dataOffset, { size: Number(idx.size), offset: Number(idx.offset) }).toString('utf8') : '';
+const liveBin = bin ? readEntryData(asarPath, header.dataOffset, { size: Number(bin.size), offset: Number(bin.offset) }).toString('utf8') : '';
+const liveInjected = liveHtml.includes(MARK_START) || liveBin.includes(BIN_MARK_START);
+const liveSha = sha256File(asarPath);
+
 let restoreMode = 'none';
-if (record && record.backupPath && fs.existsSync(record.backupPath)) {
+if (!liveInjected) {
+  restoreMode = 'already-clean';
+  console.log('server.asar is already clean; skipping restore to avoid downgrading T3 Code');
+} else if (
+  record &&
+  record.backupPath &&
+  fs.existsSync(record.backupPath) &&
+  record.patchedSha256 &&
+  liveSha === record.patchedSha256
+) {
   const backupSha = sha256File(record.backupPath);
   if (backupSha !== record.preInstallSha256) {
     console.error('ERROR: backup hash mismatch, refusing to restore. backup=' + backupSha + ' expected=' + record.preInstallSha256);
@@ -64,49 +92,36 @@ if (record && record.backupPath && fs.existsSync(record.backupPath)) {
   fs.renameSync(tmp, asarPath);
   restoreMode = 'backup';
 } else {
-  const header = readAsarHeader(asarPath);
-  let idx = null;
-  let bin = null;
-  walkFiles(header.header, (p, e) => {
-    if (p === 'apps/server/dist/client/index.html') idx = e;
-    if (p === 'apps/server/dist/bin.mjs') bin = e;
-  });
   if (!idx) {
     console.error('ERROR: index.html not found; nothing to restore');
     process.exit(4);
   }
-  const html = readEntryData(asarPath, header.dataOffset, { size: Number(idx.size), offset: Number(idx.offset) }).toString('utf8');
-  const binText = bin ? readEntryData(asarPath, header.dataOffset, { size: Number(bin.size), offset: Number(bin.offset) }).toString('utf8') : '';
-  if (!html.includes(MARK_START) && !binText.includes(BIN_MARK_START)) {
-    console.log('no injection marker and no backup; nothing to do');
-  } else {
-    const strippedHtml = stripHtml(html);
-    const strippedBin = stripBinMjs(binText);
-    const tmp = path.join(path.dirname(asarPath), 'server.asar.restore-' + process.pid);
-    const patches = [{ path: 'apps/server/dist/client/index.html', content: Buffer.from(strippedHtml, 'utf8') }];
-    if (bin) patches.push({ path: 'apps/server/dist/bin.mjs', content: Buffer.from(strippedBin, 'utf8') });
-    patchArchive({
-      sourcePath: asarPath,
-      destPath: tmp,
-      files: patches,
-      removePaths: [
-        'apps/server/dist/client/assets/antigravity-quota.js',
-        'apps/server/dist/client/assets/antigravity-quota.css',
-        'apps/server/dist/client/assets/antigravity-icon.png',
-        'apps/server/dist/t3-ag-quota',
-      ],
-    });
-    fs.renameSync(tmp, asarPath);
-    restoreMode = 'stripped';
-  }
+  const strippedHtml = stripHtml(liveHtml);
+  const strippedBin = stripBinMjs(liveBin);
+  const tmp = path.join(path.dirname(asarPath), 'server.asar.restore-' + process.pid);
+  const patches = [{ path: 'apps/server/dist/client/index.html', content: Buffer.from(strippedHtml, 'utf8') }];
+  if (bin) patches.push({ path: 'apps/server/dist/bin.mjs', content: Buffer.from(strippedBin, 'utf8') });
+  patchArchive({
+    sourcePath: asarPath,
+    destPath: tmp,
+    files: patches,
+    removePaths: [
+      'apps/server/dist/client/assets/antigravity-quota.js',
+      'apps/server/dist/client/assets/antigravity-quota.css',
+      'apps/server/dist/client/assets/antigravity-icon.png',
+      'apps/server/dist/t3-ag-quota',
+    ],
+  });
+  fs.renameSync(tmp, asarPath);
+  restoreMode = 'stripped';
 }
 
 const asarSha = sha256File(asarPath);
 console.log('restore_mode=' + restoreMode);
 console.log('asar_sha256=' + asarSha);
-if (record && record.preInstallSha256) {
+if (restoreMode === 'backup' && record && record.preInstallSha256) {
   console.log('matches_preinstall=' + (asarSha === record.preInstallSha256));
-  if (restoreMode === 'backup' && asarSha !== record.preInstallSha256) {
+  if (asarSha !== record.preInstallSha256) {
     console.error('ERROR: restored asar hash differs from recorded pre-install hash');
     process.exit(4);
   }
@@ -127,13 +142,6 @@ if (!flag('keep-files') && fs.existsSync(PLUGIN_DIR)) {
     fs.rmSync(resolved, { recursive: true, force: true });
     console.log('removed plugin dir ' + resolved);
   }
-}
-
-if (record && record.backupPath && fs.existsSync(record.backupPath) && flag('purge-backup')) {
-  fs.unlinkSync(record.backupPath);
-  console.log('purged backup ' + record.backupPath);
-} else if (record && record.backupPath) {
-  console.log('backup kept at ' + record.backupPath);
 }
 
 console.log('uninstall done. Start T3 Code to verify it launches normally.');

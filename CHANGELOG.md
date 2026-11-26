@@ -2,6 +2,15 @@
 
 All notable changes to **T3 Antigravity Quota** will be documented in this file.
 
+## [2.3.0] - 2026-11-26
+
+### T3 Code Auto-Update Survival & Safety Hardening
+- **Event-Driven Auto-Heal Guard (`scripts/auto-heal.mjs`)**: Fixes the bug where T3 Code's NSIS auto-updater overwrites `resources/server.asar` and removes the plugin. Uses OS kernel `fs.watch` (zero idle CPU, no UAC prompt, hidden `wscript.exe` launcher via `HKCU\...\Run`) plus a self-contained payload persisted in `%LOCALAPPDATA%\t3code-antigravity-quota\payload\` so auto-heal continues working even if the original download folder is deleted.
+- **Non-Disruptive Re-Injection**: Never forcibly kills T3 Code mid-conversation when an update is detected while T3 is running; automatically re-injects in ~240ms the moment T3 Code exits (or on next Windows logon). Can be opted out via `--no-auto-heal` and is completely removed by `uninstall.mjs`.
+- **Anti-Downgrade Source Selection (`chooseInstallSource`)**: Both `install.mjs` and `uninstall.mjs` now inspect the live `server.asar` and read its embedded `package.json` version (`t3VersionFromAsar`) first, ensuring an older backup can NEVER overwrite or downgrade a newly updated T3 Code `server.asar`.
+- **Persistent External Backups & Dynamic Unpacked Check**: Moved verified clean backups out of `Programs/t3code/resources/` (where NSIS wipes them) into `%LOCALAPPDATA%\t3code-antigravity-quota\backups\` (auto-pruned to latest 2 versions), and replaced the hardcoded `unpacked !== 24` check with dynamic `sourceUnpacked` parity so future T3 Code versions with changed native modules install cleanly.
+- **Enhanced Health Diagnostics (`scripts/health.mjs`)**: Now reports live `t3_version`, `asar_injected`, `auto_heal_registered`, `auto_heal_running`, and `auto_heal_status`. Verified end-to-end on T3 Code `0.1.12` (`20/20` unit tests + ASAR round-trip).
+
 ## [2.2.0] - 2026-11-25
 
 ### UI & Visual Redesign (4-Layer SDF Liquid Glass × Suzhe Typography)

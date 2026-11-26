@@ -21,10 +21,14 @@ if (!fs.existsSync(copyPath) || fs.statSync(copyPath).size !== fs.statSync(src).
 }
 
 const original = readAsarHeader(copyPath);
+let originalCount = 0;
+let originalUnpacked = 0;
 let indexEntry = null;
 let binEntry = null;
 let bigEntry = null;
 walkFiles(original.header, (p, e) => {
+  originalCount += 1;
+  if (e.unpacked) originalUnpacked += 1;
   if (p === 'apps/server/dist/client/index.html') indexEntry = e;
   if (p === 'apps/server/dist/bin.mjs') binEntry = e;
   if (!e.unpacked && Number(e.size) > 4 * 1024 * 1024 && !bigEntry) bigEntry = { path: p, entry: e };
@@ -112,4 +116,4 @@ patchArchive({
 const restored = readAsarHeader(restoredPath);
 let restoredCount = 0;
 walkFiles(restored.header, () => { restoredCount += 1; });
-console.log('restored_entries=' + restoredCount + ' matches_original_entries=' + (restoredCount === 3631));
+console.log('original_entries=' + originalCount + ' original_unpacked=' + originalUnpacked + ' restored_entries=' + restoredCount + ' matches_original_entries=' + (restoredCount === originalCount) + ' unpacked_preserved=' + (unpacked === originalUnpacked));

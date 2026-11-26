@@ -4,7 +4,7 @@
   if (window.__T3_AG_QUOTA_LOADED__) return;
   window.__T3_AG_QUOTA_LOADED__ = true;
 
-  var VERSION = '2.2.0';
+  var VERSION = '2.3.0';
   var STORAGE_KEY = 't3-antigravity-quota:v2';
   var MIN_INTERVAL_MS = 5000;
   var FRESH_TTL_MS = 60_000;

@@ -1,6 +1,6 @@
 ![T3 Antigravity Quota Banner](./docs/assets/hero-banner.svg)
 
-[![Windows 10/11](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D4?style=flat-square&logo=windows&logoColor=white)](#) [![Node.js >= 18](https://img.shields.io/badge/Node.js-%E2%89%A5%2018.0-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/) [![Zero Dependencies](https://img.shields.io/badge/npm%20dependencies-0-0ea5e9?style=flat-square)](./package.json) [![Release v2.2.0](https://img.shields.io/badge/release-v2.2.0-111827?style=flat-square)](https://github.com/woodenpiger/t3-antigravity-quota/releases) [![MIT License](https://img.shields.io/badge/license-MIT-4b5563?style=flat-square)](./LICENSE)
+[![Windows 10/11](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D4?style=flat-square&logo=windows&logoColor=white)](#) [![Node.js >= 18](https://img.shields.io/badge/Node.js-%E2%89%A5%2018.0-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/) [![Zero Dependencies](https://img.shields.io/badge/npm%20dependencies-0-0ea5e9?style=flat-square)](./package.json) [![Release v2.3.0](https://img.shields.io/badge/release-v2.3.0-111827?style=flat-square)](https://github.com/woodenpiger/t3-antigravity-quota/releases) [![MIT License](https://img.shields.io/badge/license-MIT-4b5563?style=flat-square)](./LICENSE)
 
 > **把 Antigravity 额度感知做成 T3 Code 里原本就该长成的样子。**  
 > 不占聊天区一寸空间，不遮挡发送按钮，不依赖脆弱的开机自启脚本——只需将鼠标轻触左下角侧栏的极简棱镜图标，即可透过 **4 层 SDF 光学液态玻璃** 一眼看清 `Gemini` 与 `Claude & GPT` 双池实时余量。
@@ -41,10 +41,11 @@
 
 ---
 
-## ✨ v2.2.0 架构与视觉亮点
+## ✨ v2.3.0 架构与视觉亮点
 
-| 过去常见的痛点 | T3 Antigravity Quota v2.2.0 的解法 |
+| 过去常见的痛点 | T3 Antigravity Quota v2.3.0 的解法 |
 | :--- | :--- |
+| T3 Code 每次自动更新覆盖 `server.asar`，插件直接消失 | **内置零空转自愈守护（`auto-heal.mjs`）** + 持久化离线副本（`%LOCALAPPDATA%\t3code-antigravity-quota\payload`），感知更新后自动在 T3 退出/开机时无感重新注入，绝不降级新版 `server.asar` |
 | 悬浮球遮挡右下角发送键，启动页/设置页也到处漂浮 | **原生嵌入侧栏底栏图标列**，启动页与设置页自动隐身，聊天输入区 100% 零遮挡 |
 | 依赖开机自启脚本或独立后台进程，重启电脑即失联 | **直接内嵌至 T3 自身 HTTP 服务（`/__t3_ag_quota`）**，通过 `desktopBridge` 动态寻址，随开随用 |
 | 先开 T3 再开 Clash / v2rayN，或代理端口变化即断网 | **动态解析环境变量与 Windows 注册表代理**，连接失败自动刷新代理缓存并支持直连回退 |
@@ -62,8 +63,8 @@
 
 ### 方式 A：下载 Release 压缩包双击安装（最省心）
 
-1. 前往 [Releases](https://github.com/woodenpiger/t3-antigravity-quota/releases) 下载最新版 **`t3-antigravity-quota-v2.2.0.zip`** 并解压；
-2. 双击运行根目录下的 **`install.cmd`** —— 脚本会自动安全关闭 T3 Code、生成原版 SHA-256 备份、完成注入，并重新启动 T3 Code。
+1. 前往 [Releases](https://github.com/woodenpiger/t3-antigravity-quota/releases) 下载最新版 **`t3-antigravity-quota-v2.3.0.zip`** 并解压；
+2. 双击运行根目录下的 **`install.cmd`** —— 脚本会自动安全关闭 T3 Code、在独立目录保存原版 SHA-256 备份、完成注入、注册 **T3 更新自愈守护**，并重新启动 T3 Code（若不需要自动更新自愈，可命令行加 `--no-auto-heal`）。
 
 ### 方式 B：命令行克隆安装
 
@@ -150,11 +151,12 @@ t3-antigravity-quota/
 │   ├── quota-service.cjs         # 多账号扫描、ACP 续期、分层缓存与 429 熔断
 │   ├── fixture-server.cjs        # 本地多场景 Mock 服务（showcase / healthy / exhausted）
 │   ├── lib/                      # 核心标准化、路由分发、注册表代理与 HTTPS 客户端
-│   └── test/quota.test.cjs       # 19 项 Node 原生单元测试
+│   └── test/quota.test.cjs       # 20 项 Node 原生单元测试
 ├── scripts/
 │   ├── ag-quota-hook.mjs         # 挂载至 T3 server.asar 的内嵌 HTTP 路由钩子
+│   ├── auto-heal.mjs             # 零空转 T3 更新自愈守护（感知 server.asar 覆盖并自动重注）
 │   ├── asar-lib.mjs / patch.mjs  # 纯自研 ASAR 解析与 SHA-256 完整性重打包器
-│   ├── install.mjs / uninstall.mjs # 幂等安装器与验签还原卸载器
+│   ├── install.mjs / uninstall.mjs # 幂等安装器、独立备份与防降级验签卸载器
 │   └── preview-server.mjs        # 本地前端热预览服务器
 ├── fixtures/preview.html         # 1:1 仿真 T3 工作台预览沙箱
 └── docs/                         # 矢量头图、2x Retina 实机截图与发布说明
@@ -163,7 +165,7 @@ t3-antigravity-quota/
 本地运行全部测试与独立预览沙箱（无需改动真实 T3 客户端）：
 
 ```powershell
-# 运行全部 19 项单元测试
+# 运行全部 20 项单元测试
 npm test
 
 # 终端 1：启动展示级 Mock 数据源

@@ -441,3 +441,42 @@ test('anti-ban compliance: caches loadCodeAssist & fetchAvailableModels, enforce
   await svc.getQuota(true);
   assert.equal(post.calls.length, callsAfter429, 'circuit breaker must block upstream calls during 429 cooldown');
 });
+
+test('install source selection never downgrades after T3 Code auto-update', async () => {
+  const { pathToFileURL } = require('node:url');
+  const installMod = await import(pathToFileURL(path.join(__dirname, '..', '..', 'scripts', 'install.mjs')).href);
+  const { chooseInstallSource } = installMod;
+
+  // T3 Code updated 0.1.11 -> 0.1.12 (live server.asar is clean; old 0.1.11 backup exists) -> MUST use live-clean!
+  const onUpdate = chooseInstallSource({
+    liveIsClean: true,
+    liveVersion: '0.1.12',
+    previousRecord: { t3Version: '0.1.11', preInstallSha256: 'oldsha', backupPath: 'C:/old.bak' },
+    backupExists: true,
+    backupShaMatches: true,
+    backupIsClean: true,
+  });
+  assert.deepEqual(onUpdate, { mode: 'live-clean', useBackup: false });
+
+  // Plugin upgrade on SAME T3 version (live is injected, verified backup matches same version) -> reuse backup
+  const sameVer = chooseInstallSource({
+    liveIsClean: false,
+    liveVersion: '0.1.12',
+    previousRecord: { t3Version: '0.1.12', preInstallSha256: 'sha12', backupPath: 'C:/12.bak' },
+    backupExists: true,
+    backupShaMatches: true,
+    backupIsClean: true,
+  });
+  assert.deepEqual(sameVer, { mode: 'verified-backup', useBackup: true });
+
+  // Live is injected but old backup is from a different T3 version -> strip markers in-place, never downgrade
+  const mismatch = chooseInstallSource({
+    liveIsClean: false,
+    liveVersion: '0.1.12',
+    previousRecord: { t3Version: '0.1.11', preInstallSha256: 'oldsha', backupPath: 'C:/old.bak' },
+    backupExists: true,
+    backupShaMatches: true,
+    backupIsClean: true,
+  });
+  assert.deepEqual(mismatch, { mode: 'live-strip', useBackup: false });
+});

@@ -1,7 +1,7 @@
 {
   "name": "t3-antigravity-quota",
-  "version": "2.2.0",
-  "description": "Liquid Glass Antigravity quota monitor plugin for T3 Code (Beta) on Windows — zero dependencies, embedded server hook, hover mini preview & click detail view.",
+  "version": "2.3.0",
+  "description": "4-Layer SDF Liquid Glass Antigravity quota monitor plugin for T3 Code (Beta) on Windows — zero dependencies, embedded server hook, and automatic T3 Code update survival.",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -13,6 +13,7 @@
   "scripts": {
     "install-plugin": "node scripts/install.mjs --close-t3",
     "uninstall-plugin": "node scripts/uninstall.mjs --close-t3",
+    "auto-heal": "node scripts/auto-heal.mjs --once",
     "health": "node scripts/health.mjs",
     "test": "node --test helper/test/quota.test.cjs",
     "preview:fixture": "node helper/fixture-server.cjs healthy 47899",
